@@ -31,20 +31,20 @@
     button { font: inherit; }
     .app-shell { min-height: 100vh; display: grid; place-items: center; padding: 16px; }
     .board {
-      width: min(100%, 900px);
+      width: min(100%, 780px);
       aspect-ratio: auto;
       background: var(--page);
       border: 1px solid var(--panel-border);
       border-radius: 25px;
-      padding: 24px;
+      padding: 20px;
       display: grid;
       grid-template-rows: auto auto;
-      gap: 22px;
+      gap: 18px;
     }
     .top { display: flex; align-items: center; justify-content: space-between; gap: 16px; min-width: 0; }
     .page-heading { min-width: 0; }
     h1, h2, p { margin: 0; }
-    h1 { font-size: clamp(24px, 2.5vw, 28px); line-height: 1.2; letter-spacing: -.025em; font-weight: 800; color: var(--ink-strong); }
+    h1 { font-size: clamp(22px, 2.2vw, 24px); line-height: 1.2; letter-spacing: -.025em; font-weight: 800; color: var(--ink-strong); }
     .subtitle { margin-top: 11px; color: var(--muted); font-size: 14px; line-height: 1.4; }
     .tabs {
       display: flex; flex: 0 0 auto; gap: 5px; padding: 6px;
@@ -53,7 +53,7 @@
     .tab {
       border: none; background: transparent; border-radius: 11px;
       color: #435170; cursor: pointer;
-      padding: 12px 11px; line-height: 1.2; white-space: nowrap;
+      padding: 10px 9px; line-height: 1.2; white-space: nowrap;
       font-size: 13px; font-weight: 750;
       transition: background .15s ease, color .15s ease;
     }
@@ -61,25 +61,25 @@
     .tab:focus-visible { outline: 3px solid var(--purple-strong); outline-offset: 3px; }
     .panel {
       background: #fff; border: 1px solid var(--panel-border); border-radius: 22px;
-      padding: 28px; display: flex; flex-direction: column; justify-content: flex-start;
-      gap: 28px; min-width: 0; min-height: 0;
+      padding: 24px; display: flex; flex-direction: column; justify-content: flex-start;
+      gap: 24px; min-width: 0; min-height: 0;
     }
     .section-heading { display: flex; justify-content: space-between; align-items: baseline; gap: 15px; flex-wrap: wrap; }
-    h2 { font-size: 23px; line-height: 1.25; color: var(--ink-strong); font-weight: 800; }
+    h2 { font-size: 21px; line-height: 1.25; color: var(--ink-strong); font-weight: 800; }
     .method { color: #7657c6; font-size: 12px; font-weight: 650; letter-spacing: -.01em; }
-    .description { margin-top: 14px; font-size: 16px; line-height: 1.7; color: #344362; }
+    .description { margin-top: 14px; font-size: 15px; line-height: 1.65; color: #344362; }
     .description strong { color: #1d2b54; font-weight: 800; }
     .flow { display: grid; grid-template-columns: minmax(0, 1fr) 28px minmax(0, 1fr) 28px minmax(0, 1fr); gap: 10px; align-items: stretch; }
-    .stage { background: var(--purple); border-radius: 17px; min-height: 96px; padding: 14px 10px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; text-align: center; }
+    .stage { background: var(--purple); border-radius: 17px; min-height: 84px; padding: 12px 9px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; text-align: center; }
     .stage.navy { background: var(--navy); color: #fff; }
     .stage.lime { background: var(--lime); color: var(--navy); }
-    .stage strong { color: inherit; font-size: 18px; line-height: 1.32; font-weight: 800; }
-    .stage span { color: inherit; font-size: 14px; line-height: 1.35; opacity: .9; }
+    .stage strong { color: inherit; font-size: 16px; line-height: 1.32; font-weight: 800; }
+    .stage span { color: inherit; font-size: 13px; line-height: 1.35; opacity: .9; }
     .arrow { color: #9175d8; font-size: 26px; display: flex; align-items: center; justify-content: center; font-weight: 700; }
-    .example { display: flex; flex-direction: column; gap: 16px; }
-    .example-title { font-size: 17px; font-weight: 800; line-height: 1.4; color: var(--ink); }
+    .example { display: flex; flex-direction: column; gap: 13px; }
+    .example-title { font-size: 16px; font-weight: 800; line-height: 1.4; color: var(--ink); }
     .tiles { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 8px; }
-    .tile { min-height: 50px; border-radius: 12px; display: grid; place-items: center; text-align: center; padding: 12px 3px; color: var(--navy); font-size: 14px; font-weight: 800; line-height: 1.25; }
+    .tile { min-height: 44px; border-radius: 12px; display: grid; place-items: center; text-align: center; padding: 9px 3px; color: var(--navy); font-size: 14px; font-weight: 800; line-height: 1.25; }
     .tile.p { background: #d9cef6; }
     .tile.x { background: var(--pink); color: var(--pink-text); text-decoration: line-through; }
     .tile.s { background: var(--navy); color: #fff; }
