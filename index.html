@@ -1,0 +1,259 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#f7f7fc" />
+  <meta name="description" content="AI 推歌 Code 节点：最近播放排除、异常补位与来源连续性控制交互演示。" />
+  <title>歌曲筛选与异常处理｜AI 推歌 Code 节点</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --navy: #202d57;
+      --ink: #202d57;
+      --ink-strong: #151b32;
+      --muted: #53617d;
+      --purple: #eae6fb;
+      --purple-border: #d9d1f3;
+      --purple-strong: #9c80e5;
+      --lime: #e7f88a;
+      --lime-border: #cfeb6a;
+      --pink: #f1dfe7;
+      --pink-text: #8c3957;
+      --page: #f7f7fc;
+      --panel-border: #daddef;
+      font-family: Inter, -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif;
+      font-synthesis: none;
+      -webkit-font-smoothing: antialiased;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; min-width: 320px; background: #fff; color: var(--ink); }
+    button { font: inherit; }
+    .app-shell { min-height: 100vh; display: grid; place-items: center; padding: 24px; }
+    .board {
+      width: min(100%, 1240px);
+      aspect-ratio: 4 / 3;
+      background: var(--page);
+      border: 1px solid var(--panel-border);
+      border-radius: 25px;
+      padding: 3.2%;
+      display: grid;
+      grid-template-rows: auto minmax(0, 1fr);
+      gap: 3%;
+    }
+    .top { display: flex; align-items: center; justify-content: space-between; gap: 22px; min-width: 0; }
+    .page-heading { min-width: 0; }
+    h1, h2, p { margin: 0; }
+    h1 { font-size: clamp(27px, 3.05vw, 39px); line-height: 1.2; letter-spacing: -.025em; font-weight: 800; color: var(--ink-strong); }
+    .subtitle { margin-top: 11px; color: var(--muted); font-size: clamp(15px, 1.35vw, 18px); line-height: 1.4; }
+    .tabs {
+      display: flex; flex: 0 0 auto; gap: 5px; padding: 6px;
+      background: #e9e7f4; border-radius: 15px;
+    }
+    .tab {
+      border: none; background: transparent; border-radius: 11px;
+      color: #435170; cursor: pointer;
+      padding: 15px 17px; line-height: 1.2; white-space: nowrap;
+      font-size: clamp(14px, 1.35vw, 17px); font-weight: 750;
+      transition: background .15s ease, color .15s ease;
+    }
+    .tab[aria-selected="true"] { background: var(--navy); color: #fff; box-shadow: 0 3px 9px #202d571c; }
+    .tab:focus-visible { outline: 3px solid var(--purple-strong); outline-offset: 3px; }
+    .panel {
+      background: #fff; border: 1px solid var(--panel-border); border-radius: 22px;
+      padding: 4%; display: flex; flex-direction: column; justify-content: space-between;
+      gap: 20px; min-width: 0; min-height: 0;
+    }
+    .section-heading { display: flex; justify-content: space-between; align-items: baseline; gap: 15px; flex-wrap: wrap; }
+    h2 { font-size: clamp(24px, 2.32vw, 31px); line-height: 1.25; color: var(--ink-strong); font-weight: 800; }
+    .method { color: #7657c6; font-size: clamp(13px, 1.2vw, 16px); font-weight: 650; letter-spacing: -.01em; }
+    .description { margin-top: 14px; font-size: clamp(17px, 1.55vw, 21px); line-height: 1.7; color: #344362; }
+    .description strong { color: #1d2b54; font-weight: 800; }
+    .flow { display: grid; grid-template-columns: minmax(0, 1fr) 42px minmax(0, 1fr) 42px minmax(0, 1fr); gap: 10px; align-items: stretch; }
+    .stage { background: var(--purple); border-radius: 17px; min-height: 145px; padding: 20px 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; text-align: center; }
+    .stage.navy { background: var(--navy); color: #fff; }
+    .stage.lime { background: var(--lime); color: var(--navy); }
+    .stage strong { color: inherit; font-size: clamp(17px, 1.67vw, 23px); line-height: 1.32; font-weight: 800; }
+    .stage span { color: inherit; font-size: clamp(14px, 1.32vw, 18px); line-height: 1.35; opacity: .9; }
+    .arrow { color: #9175d8; font-size: 32px; display: flex; align-items: center; justify-content: center; font-weight: 700; }
+    .example { display: flex; flex-direction: column; gap: 16px; }
+    .example-title { font-size: clamp(17px, 1.68vw, 22px); font-weight: 800; line-height: 1.4; color: var(--ink); }
+    .tiles { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 8px; }
+    .tile { min-height: 64px; border-radius: 12px; display: grid; place-items: center; text-align: center; padding: 12px 3px; color: var(--navy); font-size: clamp(14px, 1.38vw, 19px); font-weight: 800; line-height: 1.25; }
+    .tile.p { background: #d9cef6; }
+    .tile.x { background: var(--pink); color: var(--pink-text); text-decoration: line-through; }
+    .tile.s { background: var(--navy); color: #fff; }
+    .tile.m { background: var(--lime); }
+    .legend { display: flex; flex-wrap: wrap; align-items: center; gap: 22px; }
+    .legend-item { display: inline-flex; align-items: center; gap: 9px; font-size: clamp(14px, 1.28vw, 17px); color: #3d4966; font-weight: 650; line-height: 1.4; }
+    .swatch { width: 17px; height: 17px; border-radius: 5px; flex-shrink: 0; }
+    .swatch.p { background: #d9cef6; }
+    .swatch.x { background: var(--pink); }
+    .swatch.s { background: var(--navy); }
+    .swatch.m { background: var(--lime); }
+    @media (max-width: 1050px) {
+      .board { aspect-ratio: auto; min-height: 690px; gap: 24px; }
+      .top { flex-wrap: wrap; align-items: flex-start; }
+      .panel { gap: 28px; padding: 30px; }
+    }
+    @media (max-width: 660px) {
+      .app-shell { padding: 10px; }
+      .board { padding: 16px; gap: 18px; border-radius: 17px; min-height: 0; }
+      h1 { font-size: 25px; }
+      .subtitle { font-size: 13px; margin-top: 7px; }
+      .tabs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); width: 100%; gap: 3px; }
+      .tab { font-size: 12px; padding: 11px 5px; white-space: normal; }
+      .panel { padding: 18px; gap: 23px; border-radius: 14px; }
+      h2 { font-size: 21px; }
+      .method { font-size: 12px; }
+      .description { font-size: 15px; margin-top: 10px; line-height: 1.65; }
+      .flow { grid-template-columns: 1fr; gap: 6px; }
+      .stage { padding: 10px 12px; min-height: 65px; border-radius: 10px; gap: 3px; }
+      .stage strong { font-size: 15px; }
+      .stage span { font-size: 12px; }
+      .arrow { font-size: 17px; height: 14px; transform: rotate(90deg); }
+      .example { gap: 12px; }
+      .example-title { font-size: 15px; }
+      .tiles { grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 5px; }
+      .tile { font-size: 14px; min-height: 43px; padding: 8px 2px; border-radius: 7px; }
+      .legend { gap: 12px; }
+      .legend-item { font-size: 12px; }
+      .swatch { width: 13px; height: 13px; }
+    }
+    @media (prefers-reduced-motion: reduce) { .tab { transition: none; } }
+  </style>
+</head>
+<body>
+  <main class="app-shell">
+    <div class="board">
+      <header class="top">
+        <div class="page-heading">
+          <h1>歌曲筛选与异常处理</h1>
+          <p class="subtitle">AI 推歌 · Code 节点执行逻辑</p>
+        </div>
+        <nav class="tabs" role="tablist" aria-label="选择规则演示">
+          <button class="tab" id="tab-recent" role="tab" aria-selected="true" aria-controls="rule-panel" tabindex="0" data-view="recent">最近播放排除</button>
+          <button class="tab" id="tab-fill" role="tab" aria-selected="false" aria-controls="rule-panel" tabindex="-1" data-view="fill">异常补位</button>
+          <button class="tab" id="tab-mix" role="tab" aria-selected="false" aria-controls="rule-panel" tabindex="-1" data-view="mix">来源连续性控制</button>
+        </nav>
+      </header>
+      <section class="panel" id="rule-panel" role="tabpanel" aria-labelledby="tab-recent" aria-live="polite">
+        <div class="intro">
+          <div class="section-heading">
+            <h2 id="section-title">01 · 最近播放排除</h2>
+            <span class="method" id="method-name">recentIds · recentNames</span>
+          </div>
+          <p class="description" id="description">根据最近播放记录建立 <strong>song_id 与规范化歌名</strong>双重排除集合，过滤近期已听歌曲，减少短时间内重复推荐。</p>
+        </div>
+        <div class="flow" id="flow">
+          <div class="stage navy"><strong>读取播放记录</strong><span>最近 100 首</span></div>
+          <span class="arrow" aria-hidden="true">→</span>
+          <div class="stage"><strong>建立排除集合</strong><span>ID + 规范化歌名</span></div>
+          <span class="arrow" aria-hidden="true">→</span>
+          <div class="stage lime"><strong>命中则排除</strong><span>不进入候选结果</span></div>
+        </div>
+        <div class="example">
+          <p class="example-title" id="example-title">示例｜过滤近期已听歌曲</p>
+          <div class="tiles" id="example-tiles" aria-label="歌曲处理示例">
+            <div class="tile p">A</div><div class="tile p">B</div><div class="tile x">C</div><div class="tile p">D</div><div class="tile p">E</div><div class="tile x">F</div><div class="tile p">G</div><div class="tile p">H</div><div class="tile p">I</div><div class="tile p">J</div><div class="tile p">K</div><div class="tile p">L</div>
+          </div>
+          <div class="legend" id="legend">
+            <span class="legend-item"><i class="swatch p" aria-hidden="true"></i>保留候选</span>
+            <span class="legend-item"><i class="swatch x" aria-hidden="true"></i>近期已听，排除</span>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+  <script>
+    (() => {
+      const views = {
+        recent: {
+          title: '01 · 最近播放排除',
+          method: 'recentIds · recentNames',
+          description: '根据最近播放记录建立 <strong>song_id 与规范化歌名</strong>双重排除集合，过滤近期已听歌曲，减少短时间内重复推荐。',
+          steps: [['读取播放记录','最近 100 首'],['建立排除集合','ID + 规范化歌名'],['命中则排除','不进入候选结果']],
+          example: '示例｜过滤近期已听歌曲',
+          tiles: [['A','p'],['B','p'],['C','x'],['D','p'],['E','p'],['F','x'],['G','p'],['H','p'],['I','p'],['J','p'],['K','p'],['L','p']],
+          legend: [['p','保留候选'],['x','近期已听，排除']]
+        },
+        fill: {
+          title: '02 · 异常补位机制',
+          method: 'getMillionFill · canUseSong',
+          description: '当有效歌曲不足 <strong>12 首</strong>时，从随机打乱的百万收藏池补充，并检查重复、近期播放及内容规则；候选耗尽则返回实际数量。',
+          steps: [['识别数量缺口','有效歌曲不足 12 首'],['百万收藏补位','逐首选择合规歌曲'],['补位后复查','来源连续性检查']],
+          example: '示例｜9 首有效歌曲 + 3 首补位歌曲',
+          tiles: [['1','p'],['2','p'],['3','p'],['4','p'],['5','p'],['6','p'],['7','p'],['8','p'],['9','p'],['10','m'],['11','m'],['12','m']],
+          legend: [['p','已匹配歌曲'],['m','百万收藏补位']]
+        },
+        mix: {
+          title: '03 · 来源连续性控制',
+          method: 'breakSourceStreaks',
+          description: '每日推荐与红心雷达合并为<strong>偏好来源</strong>。连续出现第 <strong>5 首</strong>同来源歌曲时，尝试插入其他来源歌曲；若无可用替补，部分超限情况可能保留。',
+          steps: [['检测连续来源','按来源类型计数'],['连续超过 4 首','尝试插入其他来源'],['补位后复查','减少来源集中']],
+          example: '示例｜在第 5 首偏好歌曲前插入场景歌曲',
+          tiles: [['偏好','p'],['偏好','p'],['偏好','p'],['偏好','p'],['场景','s'],['偏好','p'],['偏好','p'],['场景','s'],['百万','m'],['偏好','p'],['场景','s'],['百万','m']],
+          legend: [['p','用户偏好'],['s','场景歌曲'],['m','百万收藏']]
+        }
+      };
+
+      const panel = document.getElementById('rule-panel');
+      const buttons = [...document.querySelectorAll('.tab')];
+      function element(tag, className, text) {
+        const el = document.createElement(tag);
+        if (className) el.className = className;
+        if (text !== undefined) el.textContent = text;
+        return el;
+      }
+      function render(key) {
+        const view = views[key];
+        if (!view) return;
+        document.getElementById('section-title').textContent = view.title;
+        document.getElementById('method-name').textContent = view.method;
+        document.getElementById('description').innerHTML = view.description;
+        document.getElementById('example-title').textContent = view.example;
+
+        const flow = document.getElementById('flow');
+        flow.replaceChildren();
+        view.steps.forEach(([name, detail], index) => {
+          if (index) flow.appendChild(element('span', 'arrow', '→'));
+          const stage = element('div', `stage ${index === 0 ? 'navy' : index === 2 ? 'lime' : ''}`);
+          stage.append(element('strong', '', name), element('span', '', detail));
+          flow.appendChild(stage);
+        });
+        const tiles = document.getElementById('example-tiles');
+        tiles.replaceChildren(...view.tiles.map(([text, type]) => element('div', `tile ${type}`, text)));
+        const legend = document.getElementById('legend');
+        legend.replaceChildren(...view.legend.map(([type, text]) => {
+          const item = element('span', 'legend-item');
+          const swatch = element('i', `swatch ${type}`);
+          swatch.setAttribute('aria-hidden', 'true');
+          item.append(swatch, document.createTextNode(text));
+          return item;
+        }));
+        buttons.forEach(button => {
+          const selected = button.dataset.view === key;
+          button.setAttribute('aria-selected', String(selected));
+          button.tabIndex = selected ? 0 : -1;
+          if (selected) panel.setAttribute('aria-labelledby', button.id);
+        });
+      }
+      buttons.forEach((button, index) => {
+        button.addEventListener('click', () => render(button.dataset.view));
+        button.addEventListener('keydown', event => {
+          let next = index;
+          if (event.key === 'ArrowRight') next = (index + 1) % buttons.length;
+          else if (event.key === 'ArrowLeft') next = (index + buttons.length - 1) % buttons.length;
+          else if (event.key === 'Home') next = 0;
+          else if (event.key === 'End') next = buttons.length - 1;
+          else return;
+          event.preventDefault();
+          buttons[next].focus();
+          render(buttons[next].dataset.view);
+        });
+      });
+      render('recent');
+    })();
+  </script>
+</body>
+</html>
